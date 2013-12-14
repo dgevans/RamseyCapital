@@ -63,8 +63,44 @@ class interpolator_factory(object):
         F = []
         for i in range(m):
             #F.append(interpolate(X,Fs[:,i],self.INFO))
-            F.append(Spline(X,Fs[:,i],self.k))
+            F.append(splineExtender(X,Fs[:,i],self.k))
         return interpolate_wrapper(np.array(F))
+        
+class splineExtender(object):
+    '''
+    Extends spline linearly outside boundry
+    '''
+    def __init__(self,X,y,k):
+        '''
+        
+        '''
+        self.F = Spline(X,y,k)
+        self.Xbar = np.vstack((np.amin(X,0),np.amax(X,0)))
+        if X.ndim == 1:
+            self.N = 1
+        else:
+            self.N = X.shape[1]
+        
+    def __call__(self,X):
+        '''
+        Evaluate spline
+        '''
+        N = self.N
+        X = np.atleast_2d(X)
+        if X.shape[0] == self.N:
+            X = X.T
+        Xtilde = np.zeros(X.shape)
+        for j in range(N):
+            Xtilde[:,j] = projectVariable(X[:,j],self.Xbar[:,j])
+        f = self.F(Xtilde)
+        Xdiff = X - Xtilde
+        D = np.eye(N,dtype=int)
+        for i in range(len(Xdiff)):
+            for j in range(N):
+                if Xdiff[i,j] >0:
+                    f[i] += self.F(Xtilde[i,:],D[j,:])*Xdiff[i,j]
+        return f     
+            
         
 def makeGrid_generic(x):
     '''
@@ -86,5 +122,12 @@ def makeGrid_generic(x):
         temp_X.reverse()
         X.append(temp_X)
     return X
+    
+def projectVariable(x,xbar):
+    '''
+    Projects a variable x onto the range [xbar[0],xbar[1]]
+    '''
+    fproj = np.vectorize(lambda x: max(min(x,xbar[1]),xbar[0]))
+    return fproj(x)
     
     

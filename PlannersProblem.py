@@ -6,8 +6,10 @@ Created on Sat Nov 30 18:05:36 2013
 """
 import numpy as np
 from utilities import interpolator_factory
+from IPython.parallel import Reference
 import itertools
 from scipy.optimize import root
+#from nag import root 
 from scipy.spatial import cKDTree
 
 P = np.array([[0.6,0.4],[0.4,0.6]])
@@ -348,22 +350,42 @@ def projectVariable(x,xbar):
     fproj = np.vectorize(lambda x: max(min(x,xbar[1]),xbar[0]))
     return fproj(x)
     
-def findFailedRoot(PRf,Xsolved,PRsolved,state,n=5):
+def solveFailedRoot(PRf,Xsolved,PRsolved,state,n=5):
     '''
     Finds a root of state given alternative policy rules
     '''
     cstate,s_ = state
-    ix = cKDTree(Xsolved).query(cstate)[1]#find nearest neighbor
-    z0 = PRsolved[ix]
-    for alpha in np.linspace(0,1,5)[1:]:
-        new_state = ((1-alpha)*Xsolved[ix]+alpha*cstate,s_)
-        z0 = PRf(new_state,z0)
-        if z0 == None:
-            z0 = PRf(new_state)
+    ixs = cKDTree(Xsolved).query(cstate,k=4)[1]#find nearest neighbor
+    for ix in ixs:
+        z0 = PRsolved[ix]
+        for alpha in np.linspace(0,1,5)[1:]:
+            new_state = ((1-alpha)*Xsolved[ix]+alpha*cstate,s_)
+            z0 = PRf(new_state,z0)
             if z0 == None:
-                return None
-    return z0      
+                z0 = PRf(new_state)
+                if z0 == None:
+                    return None
+        if z0 != None:
+            return z0
+    return None
     
+def findFailedRoots(PRnew,PR,X,s_):
+    '''
+    Finds
+    '''
+    unsolved = filter(lambda x: x[1][0] == None,enumerate(itertools.izip(PR,X)))
+    num_unsolved = len(unsolved)
+    while num_unsolved > 0:
+        solved = filter(lambda x: x[1][0] != None,enumerate(itertools.izip(PR,X)))
+        iSolved,PRXsolved = zip(*solved)
+        PRsolved,Xsolved = map(np.vstack,zip(*PRXsolved))
+        iUnsolved,PRXunsolved = zip(*unsolved)
+        for iu,(pr,x) in unsolved:
+            PR[iu] = solveFailedRoot(PRnew,Xsolved,PRsolved,(x,s_),n=50)
+            print iu,PR[iu]
+        unsolved = filter(lambda x: x[1][0] == None,enumerate(itertools.izip(PR,X)))
+        num_unsolved = len(unsolved)
+        
     
 def solvePlannersProblem_parallel(PF,Para,X,mubar,rhobar):
     '''
@@ -375,6 +397,7 @@ def solvePlannersProblem_parallel(PF,Para,X,mubar,rhobar):
     c = Client()
     v_lb = c.load_balanced_view()
     v = c[:]
+    v.block = True
     
     #calibrate model
     calibrateFromParaStruct(Para)
@@ -410,16 +433,14 @@ def solvePlannersProblem_parallel(PF,Para,X,mubar,rhobar):
             PRs_old[s_] = PRs[s_]
     return PRf
     
-def solvePlannersProblemIID_parallel(PF,Para,X,mubar,rhobar):
+def solvePlannersProblemIID_parallel(PF,Para,X,mubar,rhobar,c):
     '''
     Solves the planners problem using IPython parallel.
     '''
     #sets up some parrallel stuff
-    from IPython.parallel import Client
-    from IPython.parallel import Reference
-    c = Client()
     v_lb = c.load_balanced_view()
     v = c[:]
+    v.block = True
     
     #calibrate model
     calibrateFromParaStruct(Para)
@@ -431,25 +452,111 @@ def solvePlannersProblemIID_parallel(PF,Para,X,mubar,rhobar):
     PRs_old = []
     for s in range(S):
         PRs_old.append(PF[s](X).T)
-    
+        
     #Do policy iteration
     diff = 1.
     while diff > 1e-5:
-        v['PRnew'] = iterate_on_policies(PF,mubar,rhobar)
-        PRnew = Reference('PRnew') #create a reference to the remote object
+        PRnew = iterate_on_policies(PF,mubar,rhobar)
+        v['PRnew'] = PRnew
+        rPRnew = Reference('PRnew') #create a reference to the remote object
         
         PRs = []
         domain = itertools.izip(X,[0]*len(X))
-        policies = list(v_lb.imap(PRnew,domain))
-        PRs = [np.vstack(policies)]*S
-        diff = np.amax(np.abs(PRs[0]-PRs_old[0]))
-        print diff
+        i_policies = v_lb.imap(rPRnew,domain)
+        policies = []
+        for i,pol in enumerate(i_policies):
+            policies.append(pol)
+            if i%20 == 0:
+                print i
+        try:
+            PRs = [np.vstack(policies)]*S
+        except:
+            findFailedRoots(PRnew,policies,X,0)
+            PRs = [np.vstack(policies)]*S
+        diff = np.amax(np.abs((PRs[0]-PRs_old[0])))
+        print "diff: ",diff
         PF = []
         for s_ in range(S):
             PF.append(interpolate3d(X,PRs[s_]))
             PRs_old[s_] = PRs[s_]
     return PF
+    
+def iteratePlannersProblemIID_parallel(PF,Para,X,mubar,rhobar,c):
+    '''
+    Iterates on the planners problem
+    '''
+    #sets up some parrallel stuff
+    v_lb = c.load_balanced_view()
+    v = c[:]
+    v.block = True
+    
+    #calibrate model
+    calibrateFromParaStruct(Para)
+    v.apply(calibrateFromParaStruct,Para)
+    S = len(P) 
+    
+    #perform iteration
+    PRnew = iterate_on_policies(PF,mubar,rhobar)
+    v['PRnew'] = PRnew
+    rPRnew = Reference('PRnew') #create a reference to the remote object
+    
+    PRs = []
+    domain = itertools.izip(X,[0]*len(X))
+    i_policies = v_lb.imap(rPRnew,domain)
+    policies = []
+    for i,pol in enumerate(i_policies):
+        policies.append(pol)
+        if i%20 == 0:
+            print i
+    try:
+        PRs = [np.vstack(policies)]*S
+    except:
+        findFailedRoots(PRnew,policies,X,0)
+        PRs = [np.vstack(policies)]*S
+    return PRs
+    
+def solvePlannersProblemIID(PF,Para,X,mubar,rhobar):
+    '''
+    Solves the planners problem using IPython parallel.
+    '''
+    
+    #calibrate model
+    calibrateFromParaStruct(Para)
+    interpolate3d = interpolator_factory(['spline']*3,[10,10,10],[3]*3)
+    S = len(P)    
+    
+    #get old policy rules
+    PRs_old = []
+    for s in range(S):
+        PRs_old.append(PF[s](X).T)
         
+    #Do policy iteration
+    diff = 1.
+    while diff > 1e-5:
+        PRnew = iterate_on_policies(PF,mubar,rhobar)
+        
+        PRs = []
+        domain = itertools.izip(X,[0]*len(X))
+        i_policies = itertools.imap(PRnew,domain)
+        policies = []
+        for i,pol in enumerate(i_policies):
+            policies.append(pol)
+            if i%20 == 0:
+                print i
+        try:
+            PRs = [np.vstack(policies)]*S
+        except:
+            findFailedRoots(PRnew,policies,X,0)
+            PRs = [np.vstack(policies)]*S
+        diff = np.amax(np.abs((PRs[0]-PRs_old[0])/PRs[0]))
+        print "diff: ",diff
+        PF = []
+        for s_ in range(S):
+            PF.append(interpolate3d(X,PRs[s_]))
+            PRs_old[s_] = PRs[s_]
+    return PF,PRs
+        
+
     
     
     

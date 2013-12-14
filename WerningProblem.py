@@ -202,6 +202,7 @@ def solveProblem(mu,rho,Kgrid):
     '''
     Solves the problem for a given mu,rho using Kgrid
     '''
+    print mu,rho
     Kbar = [Kgrid[0],Kgrid[-1]]
     I,S = len(alpha),len(P)
     interpolate1d = interpolator_factory(['spline'],[len(Kgrid)],[3])
@@ -361,13 +362,11 @@ def projectVariable(x,xbar):
     return fproj(x)
     
     
-def solveWerningProblem_parallel(Para,muGrid,rhoGrid,Kgrid):
+def solveWerningProblem_parallel(Para,muGrid,rhoGrid,Kgrid,c):
     '''
     Solves the werning problem using IPython parallel
     '''
     #sets up some parrallel stuff
-    from IPython.parallel import Client
-    c = Client()
     v_lb = c.load_balanced_view()
     v_lb.block = True
     v = c[:]
@@ -375,20 +374,18 @@ def solveWerningProblem_parallel(Para,muGrid,rhoGrid,Kgrid):
     calibrateFromParaStruct(Para)
     v.apply(calibrateFromParaStruct,Para)
     XCM = np.vstack(makeGrid_generic((muGrid,rhoGrid)))
-    X = np.vstack(makeGrid_generic((muGrid,rhoGrid,Kgrid)))
-    interpolate3d = interpolator_factory(['spline']*3,[len(muGrid),len(rhoGrid),len(Kgrid)],[3]*3)
     
     #solve the problem
     PRCMtemp = v_lb.map(lambda x: solveProblem(x[0][0],x[0][1],x[1]),zip(XCM,[Kgrid]*len(XCM)))
-    PF = []    
+    PRs = []    
     S = len(P)
     for s_ in range(S):
         temp = []
         for ik in range(len(Kgrid)):
             for pr in PRCMtemp:
                 temp.append(pr[s_][ik])
-        PF.append(interpolate3d(X,np.vstack(temp)))
-    return PF
+        PRs.append(np.vstack(temp))
+    return PRs
         
     
     
