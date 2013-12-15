@@ -91,7 +91,7 @@ class iterate_on_policies(object):
         mu_,rho_,K_ = cstate[:(I-1)].reshape(I-1,1),cstate[I-1:2*(I-1)].reshape(I-1,1),cstate[2*(I-1)]
         if z0==None:
             z0 = self.PF[s_](cstate)
-        res = root(lambda z: self.policy_residuals_nobounds((mu_,rho_,K_,s_),z),z0[:len(z0)-I])
+        res = root(lambda z: self.policy_residuals((mu_,rho_,K_,s_),z),z0[:len(z0)-I])
         if not res.success:
             return None
         else:
@@ -336,6 +336,47 @@ def getQuantities(z):
     iz += I-1
     VK = z[iz]
     return c1,ci,n1,ni,Rk,x_,xk,rhotilde,K,mu,phi,lam,lam_k,nu,xi,eta,Vrho,VK
+    
+def getXDV(PR):
+    '''
+    From z get the quantities
+    '''
+    z = PR.T
+    S = len(P)
+    I = len(alpha)
+    c1 = z[:S]
+    ci = z[S:I*S]
+    n1 = z[I*S:I*S+S]
+    ni = z[I*S+S:2*I*S]
+    iz = 2*I*S
+    Rk = z[iz:iz+S]
+    iz += S
+    x_ = z[iz:iz+(I-1)]
+    iz += (I-1)
+    xk = z[iz:iz+(I-1)]
+    iz += (I-1)
+    rhotilde = z[iz:iz+(I-1)*S]
+    iz += (I-1)*S
+    K = z[iz:iz+S]
+    iz += S
+    mu = z[iz:iz+(I-1)*S]
+    iz += (I-1)*S
+    phi = z[iz:iz+(I-1)*S]
+    iz += (I-1)*S
+    lam = z[iz:iz+(I-1)]
+    iz += I-1
+    lam_k = z[iz:iz+(I-1)]
+    iz += I-1
+    nu = z[iz:iz+S]
+    iz += S
+    xi = z[iz:iz+S]
+    iz += S
+    eta = z[iz:iz+(I-1)*S]
+    iz += (I-1)*S
+    Vrho = z[iz:iz+I-1]
+    iz += I-1
+    VK = z[iz]
+    return np.vstack((x_,Vrho,VK))
 
 def getFunctions(PF):
     '''
@@ -482,7 +523,6 @@ def iteratePlannersProblemIID_parallel(PF,Para,X,mubar,rhobar,c):
     Iterates on the planners problem
     '''
     #sets up some parrallel stuff
-    v_lb = c.load_balanced_view()
     v = c[:]
     v.block = True
     
@@ -497,12 +537,10 @@ def iteratePlannersProblemIID_parallel(PF,Para,X,mubar,rhobar,c):
     rPRnew = Reference('PRnew') #create a reference to the remote object
     
     domain = itertools.izip(X,[0]*len(X))
-    i_policies = v_lb.imap(rPRnew,domain)
+    i_policies = v.imap(rPRnew,domain)
     policies = []
     for i,pol in enumerate(i_policies):
         policies.append(pol)
-        if i%20 == 0:
-            print i
     return policies
     
 def solvePlannersProblemIID(PF,Para,X,mubar,rhobar):

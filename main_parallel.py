@@ -62,17 +62,17 @@ for a in alpha[1:]:
     while diff > 1e-5:
         policies = PP.iteratePlannersProblemIID_parallel(PF,Para,X,mubar,rhobar,c)
         try:
-            PRs = [np.vstack(policies)]*S
+            PRs = [vstack(policies)]*S
         except:
             PRnew = PP.iterate_on_policies(PF,mubar,rhobar)
             PP.findFailedRoots(PRnew,policies,X,0)
             solved = filter(lambda x: x[1][0] != None,enumerate(itertools.izip(policies,X)))
             iSolved,PRXsolved = zip(*solved)
-            PRsolved,Xsolved = map(np.vstack,zip(*PRXsolved))
+            PRsolved,Xsolved = map(vstack,zip(*PRXsolved))
             F = interpolate3d(Xsolved,PRsolved)
             PRs = [F(X).T]*S
-        diff = amax(abs((PRs[0]-PRs_old[0])))
-        rel_diff = amax(abs((PRs[0]-PRs_old[0])/PRs[0]))
+        diff = amax(abs((PP.getXDV(PRs[0])-PP.getXDV(PRs_old[0]))))
+        rel_diff = amax(abs((PP.getXDV(PRs[0])-PP.getXDV(PRs_old[0]))/PP.getXDV(PRs[0])))
         print "diff: ",diff,rel_diff
         PF = []
         for s_ in range(len(Para.P)):

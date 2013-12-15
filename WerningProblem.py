@@ -370,6 +370,7 @@ def solveWerningProblem_parallel(Para,muGrid,rhoGrid,Kgrid,c):
     v_lb = c.load_balanced_view()
     v_lb.block = True
     v = c[:]
+    v.block = True
     #Setup
     calibrateFromParaStruct(Para)
     v.apply(calibrateFromParaStruct,Para)
