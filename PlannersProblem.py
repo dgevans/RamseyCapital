@@ -374,17 +374,15 @@ def findFailedRoots(PRnew,PR,X,s_):
     Finds
     '''
     unsolved = filter(lambda x: x[1][0] == None,enumerate(itertools.izip(PR,X)))
-    num_unsolved = len(unsolved)
-    while num_unsolved > 0:
-        solved = filter(lambda x: x[1][0] != None,enumerate(itertools.izip(PR,X)))
-        iSolved,PRXsolved = zip(*solved)
-        PRsolved,Xsolved = map(np.vstack,zip(*PRXsolved))
-        iUnsolved,PRXunsolved = zip(*unsolved)
-        for iu,(pr,x) in unsolved:
-            PR[iu] = solveFailedRoot(PRnew,Xsolved,PRsolved,(x,s_),n=50)
-            print iu,PR[iu]
-        unsolved = filter(lambda x: x[1][0] == None,enumerate(itertools.izip(PR,X)))
-        num_unsolved = len(unsolved)
+    solved = filter(lambda x: x[1][0] != None,enumerate(itertools.izip(PR,X)))
+    iSolved,PRXsolved = zip(*solved)
+    PRsolved,Xsolved = map(np.vstack,zip(*PRXsolved))
+    iUnsolved,PRXunsolved = zip(*unsolved)
+    for iu,(pr,x) in unsolved:
+        PR[iu] = solveFailedRoot(PRnew,Xsolved,PRsolved,(x,s_),n=50)
+        print iu,PR[iu]
+    #unsolved = filter(lambda x: x[1][0] == None,enumerate(itertools.izip(PR,X)))
+    #num_unsolved = len(unsolved)
         
     
 def solvePlannersProblem_parallel(PF,Para,X,mubar,rhobar):
@@ -466,8 +464,6 @@ def solvePlannersProblemIID_parallel(PF,Para,X,mubar,rhobar,c):
         policies = []
         for i,pol in enumerate(i_policies):
             policies.append(pol)
-            if i%20 == 0:
-                print i
         try:
             PRs = [np.vstack(policies)]*S
         except:
@@ -500,7 +496,6 @@ def iteratePlannersProblemIID_parallel(PF,Para,X,mubar,rhobar,c):
     v['PRnew'] = PRnew
     rPRnew = Reference('PRnew') #create a reference to the remote object
     
-    PRs = []
     domain = itertools.izip(X,[0]*len(X))
     i_policies = v_lb.imap(rPRnew,domain)
     policies = []
@@ -508,12 +503,7 @@ def iteratePlannersProblemIID_parallel(PF,Para,X,mubar,rhobar,c):
         policies.append(pol)
         if i%20 == 0:
             print i
-    try:
-        PRs = [np.vstack(policies)]*S
-    except:
-        findFailedRoots(PRnew,policies,X,0)
-        PRs = [np.vstack(policies)]*S
-    return PRs
+    return policies
     
 def solvePlannersProblemIID(PF,Para,X,mubar,rhobar):
     '''
