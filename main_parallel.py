@@ -21,7 +21,7 @@ Para = calibration.baseline2
 theta1 = Para.theta
 theta0 = Para.theta.dot(Para.P[0,:]).reshape(-1,1)
 
-alpha = linspace(0,1,10)
+alpha = linspace(0,1,20)
 a = alpha[1]
 Para.theta = a*theta1+(1-a)*theta0
 

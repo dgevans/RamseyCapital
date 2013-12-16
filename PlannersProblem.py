@@ -91,7 +91,7 @@ class iterate_on_policies(object):
         mu_,rho_,K_ = cstate[:(I-1)].reshape(I-1,1),cstate[I-1:2*(I-1)].reshape(I-1,1),cstate[2*(I-1)]
         if z0==None:
             z0 = self.PF[s_](cstate)
-        res = root(lambda z: self.policy_residuals((mu_,rho_,K_,s_),z),z0[:len(z0)-I])
+        res = root(lambda z: self.policy_residuals_nobounds((mu_,rho_,K_,s_),z),z0[:len(z0)-I])
         if not res.success:
             return None
         else:
@@ -116,7 +116,7 @@ class iterate_on_policies(object):
         mu_,rho_,K_ = cstate[:(I-1)].reshape(I-1,1),cstate[I-1:2*(I-1)].reshape(I-1,1),cstate[2*(I-1)]
         if z0==None:
             z0 = self.PF[s_](cstate)
-        res = root(lambda z: self.policy_residuals_nobounds((mu_,rho_,K_,s_),z),z0[:len(z0)-I])
+        res = root(lambda z: self.policy_residuals((mu_,rho_,K_,s_),z),z0[:len(z0)-I])
         if not res.success:
             return None
         else:
