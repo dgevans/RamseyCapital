@@ -32,7 +32,7 @@ thetabar =np.array([0.75,0.25]).reshape((-1,1))
 tfpshock = np.array([1.02,0.98])
 ineq_shock = np.array([[1.05,1.],[0.95,1.]])
 Ptfp = np.ones((2,2))/2.
-Pineq = [np.array([[0.7,0.3],[0.7,0.3]]),np.array([[0.3,0.7],[0.3,0.7]])]
+Pineq = [np.array([[0.3,0.7],[0.3,0.7]]),np.array([[0.7,0.3],[0.7,0.3]])]
 baseline2 = parameters()
 
 baseline2.Ufunc = UtilityFunctions.CRRA(2.,2.)

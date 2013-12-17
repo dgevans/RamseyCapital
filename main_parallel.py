@@ -21,7 +21,7 @@ Para = calibration.baseline2
 theta1 = Para.theta
 theta0 = Para.theta.dot(Para.P[0,:]).reshape(-1,1)
 
-alpha = linspace(0,1,20)
+alpha = linspace(0,1,6)
 a = alpha[1]
 Para.theta = a*theta1+(1-a)*theta0
 
@@ -34,7 +34,7 @@ PP.calibrateFromParaStruct(Para)
 
 muGrid = linspace(0.5,0.8,10)
 rhoGrid = linspace(1.6,2.,10)
-Kgrid = linspace(1.,2.5,10)
+Kgrid = linspace(3.,5.,10)
 
 
 XCM = vstack(utilities.makeGrid_generic((muGrid,rhoGrid)))
@@ -81,3 +81,6 @@ for a in alpha[1:]:
             else:
                 PF.append(interpolate3d(X,PRs[s_]))
             PRs_old[s_] = PRs[s_]
+    fout = file('progress.dat','w')
+    cPickle.dump((PRs,Para),fout)
+    fout.close()

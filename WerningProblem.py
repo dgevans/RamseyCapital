@@ -127,8 +127,8 @@ class iterate_on_policies(object):
         #unpack policies and functions
         c1,ci,n1,ni,Ktilde,phi,xi,eta = getQuantities(z)
         K = projectVariable(Ktilde,self.Kbar)
-        barlam = np.vectorize(lambda k: max(k,0.))(Ktilde-self.Kbar[0])
-        lambar = -np.vectorize(lambda k: min(k,0.))(Ktilde-self.Kbar[0]) 
+        barlam = np.vectorize(lambda k: max(k,0.))(Ktilde-K)
+        lambar = -np.vectorize(lambda k: min(k,0.))(Ktilde-K) 
         
         
         c1f,cif,n1f,nif,Kf,phif,xif,etaf = getQuantities(self.PF)

@@ -586,6 +586,26 @@ def solvePlannersProblemIID(PF,Para,X,mubar,rhobar):
         
 
     
-    
+def simulate(T,mu0,rho0,K0,s0,PF,mubar):
+    '''
+    Simulates the economy.
+    '''
+    S = len(P)
+    PRHist = []
+    sHist = [s0]
+    cstate = np.hstack((mu0.flatten(),rho0.flatten(),K0))
+    PRHist.append(PF[s0](cstate))
+    for t in range(1,T+1):
+        c1,ci,n1,ni,Rk,x_,xk,rhotilde,K,mu,phi,lam,lam_k,nu,xi,eta,Vrho,VK = \
+            getQuantities(PRHist[-1])
+        s_ = sHist[-1]
+        s = np.random.choice(range(S),p=P[s_,:])
+        mutilde = projectVariable(mu,mubar)
+        cstate = np.hstack((mutilde[:,s],rhotilde[:,s],K[s]))
+        sHist.append(s)
+        PRHist.append(PF[s](cstate))
+    return sHist[1:],PRHist[:-1]
+        
+        
     
     
