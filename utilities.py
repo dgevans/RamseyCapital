@@ -63,7 +63,7 @@ class interpolator_factory(object):
         F = []
         for i in range(m):
             #F.append(interpolate(X,Fs[:,i],self.INFO))
-            F.append(splineExtender(X,Fs[:,i],self.k))
+            F.append(Spline(X,Fs[:,i],self.k))
         return interpolate_wrapper(np.array(F))
         
 class splineExtender(object):

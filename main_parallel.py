@@ -32,8 +32,8 @@ WP.calibrateFromParaStruct(Para)
 PP.calibrateFromParaStruct(Para)
 
 
-muGrid = linspace(0.5,0.8,10)
-rhoGrid = linspace(1.6,2.,10)
+muGrid = linspace(0.45,0.85,10)
+rhoGrid = linspace(1.4,1.8,10)
 Kgrid = linspace(3.,5.,10)
 
 
@@ -62,7 +62,10 @@ for a in alpha[1:]:
     WP.calibrateFromParaStruct(Para)
     PP.calibrateFromParaStruct(Para)
     diff = 1.
-    while diff > 1e-5:
+    diffbar = 1e-4
+    if a == alpha[-1]:
+        diffbar = 1e-5
+    while diff > diffbar:
         policies = PP.iteratePlannersProblemIID_parallel(PF,Para,X,mubar,rhobar,c)
         try:
             PRs = [vstack(policies)]*S

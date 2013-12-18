@@ -222,7 +222,7 @@ class iterate_on_policies(object):
         mu_,rho_,K_,s_ = state
         #unpack quantities and functions
         c1,ci,n1,ni,Rk,x_,xk,rho,K,mu,phi,lam,lam_k,nu,xi,eta = getQuantities(z)
-        mutilde = mu # projectVariable(mu,self.mubar)
+        mutilde = mu #projectVariable(mu,self.mubar)
         #rho = projectVariable(rhotilde,self.rhobar)
         #barlam = np.vectorize(lambda r: max(r,0.))(rhotilde-rho)
         #lambar = -np.vectorize(lambda r: min(r,0.))(rhotilde-rho)        
@@ -244,13 +244,13 @@ class iterate_on_policies(object):
         x = np.zeros((I-1,S))
         Vrho_prime = np.zeros((I-1,S))
         VK_prime = np.zeros(S)
-       # VK_prime_test = np.zeros(S)
+        #VK_prime_test = np.zeros(S)
         for s in range(S):
             stateprime = np.hstack((mutilde[:,s],rho[:,s],K[s]))
             x[:,s] = x_f[s](stateprime)
             #Uc1prime = Uc(c1f[s](stateprime),n1f[s](stateprime))
             #Nprime = pi1*theta1*n1f[s](stateprime) + sum(pii*thetai*nif[s](stateprime),0)
-            #VK_prime_test[s] = P[s,:].dot( xif[s](stateprime)*FK(K[s],Nprime) + nuf[s](stateprime)*FKK(K[s],Nprime))
+            #VK_prime[s] = P[s,:].dot( xif[s](stateprime)*FK(K[s],Nprime) + nuf[s](stateprime)*FKK(K[s],Nprime))
             #Vrho_prime[:,s] = (lamf[s](stateprime)*Uc1prime +
             #   lam_kf[s](stateprime)*Uc1prime*Rkf[s](stateprime)).dot(P[s_,:])
             VK_prime[s] = VKf[s](stateprime)
