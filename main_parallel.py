@@ -42,6 +42,9 @@ X = vstack(utilities.makeGrid_generic((muGrid,rhoGrid,Kgrid)))
 Para.X = X
 
 PRs = WP.solveWerningProblem_parallel(Para,muGrid,rhoGrid,Kgrid,c)
+fout = file('progressCM.dat','w')
+cPickle.dump((PRs,Para),fout)
+fout.close()
 
 mubar = [muGrid[0],muGrid[-1]]
 rhobar = [rhoGrid[0],rhoGrid[-1]]

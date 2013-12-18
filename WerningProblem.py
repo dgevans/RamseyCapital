@@ -122,6 +122,7 @@ class iterate_on_policies(object):
         '''
         Computes the residuals of a policy choice z
         '''
+        import pdb
         mu,rho = self.mu,self.rho
         I,S = len(theta),len(P)
         #unpack policies and functions
@@ -142,8 +143,10 @@ class iterate_on_policies(object):
         ExiFK = np.zeros(S)
         for s in range(S):
             Ks = np.array([K[s]])
+            
             Nprime = pi1*theta1*n1f(Ks)+np.sum(pii*thetai*nif(Ks),0)
             ExiFK[s] = P[s,:].dot(xif(Ks)*FK(Ks,Nprime))
+            #pdb.set_trace()
         #compute residuals
         res = np.zeros(len(z))
         res[:(I-1)*S] = (Un1*thetai*rho-Uni*theta1).flatten()
@@ -162,6 +165,8 @@ class iterate_on_policies(object):
         res[iz:iz+S] = alpha1*pi1*Un1 + np.sum(rho*mu,0)*( Un1+n1*Unn1) + xi*FN(K_,N)*pi1*theta1\
          +np.sum(phi*thetai*rho,0)*Unn1
         iz += (I-1)*S
+        
+        #pdb.set_trace()
         res[iz:iz+S] = beta*ExiFK - xi-barlam+lambar
         return res
         
