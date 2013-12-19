@@ -32,8 +32,8 @@ WP.calibrateFromParaStruct(Para)
 PP.calibrateFromParaStruct(Para)
 
 
-muGrid = linspace(0.45,0.85,10)
-rhoGrid = linspace(1.4,1.8,10)
+muGrid = linspace(0.25,0.75,10)
+rhoGrid = linspace(1.5,2.,10)
 Kgrid = linspace(3.,5.,10)
 
 
@@ -48,7 +48,7 @@ fout.close()
 
 mubar = [muGrid[0],muGrid[-1]]
 rhobar = [rhoGrid[0],rhoGrid[-1]]
-PRs,Para = cPickle.load(file('progress.dat','r'))  
+#PRs,Para = cPickle.load(file('progress.dat','r'))  
 interpolate3d_lin = utilities.interpolator_factory(['spline']*3,[10,10,10],[3]*3)
 PRs_old = []
 PF = []
@@ -56,7 +56,7 @@ for s_ in range(S):
     PRs_old.append(PRs[s_])
     PF.append(interpolate3d_lin(X,PRs[s_]))
 interpolate3d = utilities.interpolator_factory(['spline']*3,[10,10,10],[3]*3)
-for a in alpha[5:]:
+for a in alpha[1:]:
     Para.theta = a*theta1+(1-a)*theta0
     print "new theta:",Para.theta
     WP.calibrateFromParaStruct(Para)
