@@ -32,8 +32,8 @@ WP.calibrateFromParaStruct(Para)
 PP.calibrateFromParaStruct(Para)
 
 
-muGrid = linspace(0.25,0.75,10)
-rhoGrid = linspace(1.5,2.,10)
+muGrid = linspace(0.4,0.75,10)
+rhoGrid = linspace(1.65,2.,10)
 Kgrid = linspace(3.,5.,10)
 
 
