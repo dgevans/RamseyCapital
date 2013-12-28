@@ -17,7 +17,7 @@ with v.sync_imports():
     import calibration
 
 #PRs,Para = cPickle.load(file('baseline2.dat','r'))  
-Para = calibration.baseline2
+Para = calibration.baseline3
 theta1 = Para.theta
 theta0 = Para.theta.dot(Para.P[0,:]).reshape(-1,1)
 
