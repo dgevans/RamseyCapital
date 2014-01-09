@@ -217,7 +217,6 @@ class iterate_on_policies(object):
         '''
         Computes the residuals for the FOC 
         '''
-        import pdb
         I,S = len(theta),len(P)
         mu_,rho_,K_,s_ = state
         #unpack quantities and functions
@@ -597,6 +596,7 @@ def simulate(T,mu0,rho0,K0,s0,PF,mubar):
     '''
     S = len(P)
     PRHist = []
+    taukHist = []
     sHist = [s0]
     cstate = np.hstack((mu0.flatten(),rho0.flatten(),K0))
     PRHist.append(PF[s0](cstate))
@@ -609,7 +609,13 @@ def simulate(T,mu0,rho0,K0,s0,PF,mubar):
         cstate = np.hstack((mutilde[:,s],rhotilde[:,s],K[s]))
         sHist.append(s)
         PRHist.append(PF[s](cstate))
-    return sHist[1:],PRHist[:-1]
+        
+        #compute capital tax
+        c1prime,_,n1prime,_,Rkprime,_,_,_,_,_,_,_,_,_,_,_,_,_ = getQuantities(PRHist[-1])
+        Uc1,Uc1prime = Uc(c1,n1),Uc(c1prime,n1prime)
+        EUc1Rkprime = P[s,:].dot(Uc1prime*Rkprime)
+        taukHist.append( 1- Uc1[s]/EUc1Rkprime )
+    return sHist[1:],PRHist[:-1],taukHist[:-1]
         
         
     
